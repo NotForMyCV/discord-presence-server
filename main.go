@@ -4,7 +4,9 @@ import (
 	"discord-rpc-server/icon"
 	"log"
 	"os"
+	"strings"
 
+	"github.com/atotto/clipboard"
 	"github.com/getlantern/systray"
 )
 
@@ -26,6 +28,30 @@ func trayOnReady() {
 
 	status = systray.AddMenuItem("Waiting to receive presence updates", "")
 	status.Disable()
+
+	// Add "Copy Last Presence" menu item
+	mCopyPresence := systray.AddMenuItem("Copy Presence", "Copy current presence state and details to clipboard")
+	go func() {
+		for range mCopyPresence.ClickedCh {
+			state, details, url := GetLastPresenceStateAndDetails()
+			var result []string
+
+			if state != "" {
+				result = append(result, state)
+			}
+
+			if details != "" {
+				result = append(result, details)
+			}
+
+			if url != "" {
+				result = append(result, url)
+			}
+
+			txt := strings.Join(result, ", ")
+			clipboard.WriteAll(txt)
+		}
+	}()
 
 	systray.AddSeparator()
 	mQuitOrig := systray.AddMenuItem("Quit", "Quit presence server")

@@ -1,6 +1,6 @@
 module discord-rpc-server
 
-go 1.19
+go 1.21
 
 require (
 	github.com/getlantern/systray v1.2.2
@@ -10,6 +10,8 @@ require (
 )
 
 require (
+	github.com/akavel/rsrc v0.10.2 // indirect
+	github.com/atotto/clipboard v0.1.4 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.3 // indirect
 	github.com/getlantern/context v0.0.0-20190109183933-c447772a6520 // indirect
 	github.com/getlantern/errors v0.0.0-20190325191628-abdb3e3e36f7 // indirect

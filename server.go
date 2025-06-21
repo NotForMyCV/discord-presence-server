@@ -9,10 +9,19 @@ import (
 	"math"
 	"net/http"
 	"slices"
+	"sync"
 	"time"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gorilla/websocket"
+)
+
+// Add mutex and last presence global variables
+var (
+	lastPresenceState   string
+	lastPresenceDetails string
+	lastPresenceUrl     string
+	lastPresenceMutex   sync.RWMutex
 )
 
 type Presence struct {
@@ -45,6 +54,13 @@ var (
 	// https://discord.com/developers/docs/topics/rpc#setactivity-set-activity-argument-structure
 	activityTypes = []int{0, 2, 3, 5}
 )
+
+// Expose a getter for the last presence for use in main.go
+func GetLastPresenceStateAndDetails() (string, string, string) {
+	lastPresenceMutex.RLock()
+	defer lastPresenceMutex.RUnlock()
+	return lastPresenceState, lastPresenceDetails, lastPresenceUrl
+}
 
 func wsHandler(w http.ResponseWriter, r *http.Request) {
 	upgrader.CheckOrigin = func(r *http.Request) bool { return true }
@@ -140,6 +156,25 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 
 			activity.Buttons = buttonArr
 		}
+
+		// Save last presence state and details
+		lastPresenceMutex.Lock()
+		if updateMessage.Presence.State != nil {
+			lastPresenceState = *updateMessage.Presence.State
+		} else {
+			lastPresenceState = ""
+		}
+		if updateMessage.Presence.Details != nil {
+			lastPresenceDetails = *updateMessage.Presence.Details
+		} else {
+			lastPresenceDetails = ""
+		}
+		if updateMessage.Presence.Buttons != nil {
+			lastPresenceUrl = *(*updateMessage.Presence.Buttons)[0].Url
+		} else {
+			lastPresenceUrl = ""
+		}
+		lastPresenceMutex.Unlock()
 
 		resp, err := rpcClient.SetActivity(*updateMessage.ClientID, activity)
 
